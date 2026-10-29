@@ -25,12 +25,16 @@ let settings = readSettings();
 let memKey = '';            // used only when localStorage is blocked (this view only)
 let geminiBlocked = false;  // learned from a call: this page cannot reach Gemini (CSP)
 function saveSettings() { try { localStorage.setItem(SKEY, JSON.stringify(settings)); } catch { /* keep in memory */ } }
+// A pasted key may carry full-width letters (Japanese input) or invisible characters (zero-width
+// spaces, line breaks). Those make fetch() reject the header before anything is sent, so keep only
+// the characters a Google API key can contain.
+const cleanKey = (k) => String(k || '').normalize('NFKC').replace(/[^A-Za-z0-9_-]/g, '');
 function geminiKey() {
-  try { const k = localStorage.getItem(KKEY); if (k) return k; } catch { /* blocked storage */ }
+  try { const k = localStorage.getItem(KKEY); if (k) return cleanKey(k); } catch { /* blocked storage */ }
   return memKey;
 }
 function setGeminiKey(k) {
-  k = String(k || '').trim();
+  k = cleanKey(k);
   memKey = '';
   try { if (k) localStorage.setItem(KKEY, k); else localStorage.removeItem(KKEY); }
   catch { memKey = k; }
@@ -97,7 +101,7 @@ const FALLBACK = '翻訳に失敗しました。押し直してください';
 export function providerErrorText(code) {
   const gem = {
     blocked: BLOCKED,
-    network: 'Geminiに接続できませんでした。ネット接続を確かめてから押し直してください',
+    network: `Geminiに接続できませんでした。ネット接続を確かめてから押し直してください。Claudeアプリの中で開いている場合は、Safariで開くと通ることがあります${lastNetDetail ? `（詳細: ${lastNetDetail}）` : ''}`,
     no_key: 'Gemini を使うには「AIの設定」で APIキーを入れてください',
     bad_key: 'Gemini の APIキーが正しくないか、使えないキーです。「AIの設定」でキーを確かめてください',
     bad_model: 'Gemini のモデル名が見つかりません。「AIの設定」でモデルを確かめてください',
@@ -124,6 +128,7 @@ export function providerErrorText(code) {
 // ---- Gemini ----
 // Did the page's Content-Security-Policy block a request to Gemini? (The event is dispatched to the document.)
 let cspHits = 0;
+let lastNetDetail = '';   // the browser's own words for the last failed connection (shown with the message)
 document.addEventListener('securitypolicyviolation', (e) => {
   if (String(e.blockedURI || '').includes('generativelanguage.googleapis.com')) cspHits++;
 });
@@ -157,25 +162,32 @@ export async function geminiJson(prompt, opts = {}) {
   const onAbort = () => ctrl.abort();
   if (outer) { if (outer.aborted) ctrl.abort(); else outer.addEventListener('abort', onAbort, { once: true }); }
   const hitsBefore = cspHits;
+  const body = JSON.stringify({
+    contents: [{ role: 'user', parts: [{ text: String(prompt) }] }],
+    generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+  });
+  const base = `${API}${encodeURIComponent(model)}:generateContent`;
+  const common = { method: 'POST', body, signal: ctrl.signal, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store' };
   try {
     let res;
     try {
-      res = await fetch(`${API}${encodeURIComponent(model)}:generateContent`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: String(prompt) }] }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
-        }),
-        signal: ctrl.signal, credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store',
-      });
+      res = await fetch(base, { ...common, headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key } });
     } catch (e) {
       if (ctrl.signal.aborted) throw err(timedOut ? 'timeout' : 'cancelled');
       // A CSP block rejects at once with a TypeError; the violation event may arrive a moment later.
       await new Promise(r => setTimeout(r, 60));
       if (cspHits > hitsBefore || LINK || /claudeusercontent\.com$|claude\.ai$/.test(location.hostname)) { geminiBlocked = true; changed(); throw err('blocked'); }
-      throw err('network');
+      // Some in-app browsers fail the CORS preflight that a custom header triggers. Retry once as a
+      // "simple" request (key as the documented ?key= parameter, text/plain body: no preflight).
+      try {
+        res = await fetch(`${base}?key=${encodeURIComponent(key)}`, { ...common, headers: { 'Content-Type': 'text/plain;charset=UTF-8' } });
+      } catch (e2) {
+        if (ctrl.signal.aborted) throw err(timedOut ? 'timeout' : 'cancelled');
+        lastNetDetail = `${e2?.name || e?.name || 'Error'}: ${String(e2?.message || e?.message || '').slice(0, 120)}`;
+        throw err('network');
+      }
     }
+    lastNetDetail = '';
     let data = null;
     try { data = await res.json(); } catch { data = null; }
     if (!res.ok) {
