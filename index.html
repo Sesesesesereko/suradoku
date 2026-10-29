@@ -358,12 +358,12 @@
       <div class="row wrap">
         <label class="field">モデル
           <select id="aiModel">
-            <option value="auto">おまかせ（ふだんは gemini-2.5-flash、難しい処理は gemini-2.5-pro）</option>
-            <option value="flash">いつも gemini-2.5-flash（速い）</option>
-            <option value="pro">いつも gemini-2.5-pro（より正確・遅い・上限が少なめ）</option>
+            <option value="auto">おまかせ（ふだんは最新の Flash、難しい処理は Pro。使えなければ自動で Flash）</option>
+            <option value="flash">いつも最新の Flash（速い・おすすめ）</option>
+            <option value="pro">いつも Pro（gemini-3.1-pro-preview。より正確・遅い・上限が少なめ）</option>
             <option value="own">モデル名を入力する</option>
           </select></label>
-        <label class="field" id="aiModelOwnWrap" hidden>モデル名 <input type="text" id="aiModelOwn" autocomplete="off" spellcheck="false" placeholder="gemini-2.5-flash"></label>
+        <label class="field" id="aiModelOwnWrap" hidden>モデル名 <input type="text" id="aiModelOwn" autocomplete="off" spellcheck="false" placeholder="gemini-flash-latest"></label>
       </div>
     </div>
     <p class="hint" id="aiEnvNote"></p>

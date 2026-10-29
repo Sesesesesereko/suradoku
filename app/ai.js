@@ -13,7 +13,10 @@
 const LINK = document.querySelector('meta[name="readflow-env"]')?.content === 'link';
 const SKEY = 'readflow:ai', KKEY = 'readflow:ai-gemini-key';
 const API = 'https://generativelanguage.googleapis.com/v1beta/models/';
-export const GEMINI_FAST = 'gemini-2.5-flash', GEMINI_PRO = 'gemini-2.5-pro';
+// Gemini 2.5 is no longer offered to new API keys (2026). 'gemini-flash-latest' is Google's alias that
+// always points at the newest Flash, so it keeps working when versions change; fixed names are fallbacks.
+export const GEMINI_FAST = 'gemini-flash-latest', GEMINI_PRO = 'gemini-3.1-pro-preview';
+const FAST_FALLBACKS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'];
 const NAMES = { claude: 'Claude', gemini: 'Gemini' };
 const BLOCKED = 'この場所（claude.ai上）からはGeminiに接続できません。アプリをclaude.ai以外で開いたときに使えます';
 
@@ -151,7 +154,30 @@ export function parseJsonText(text) {
   if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch { /* fall through */ } }
   throw err('invalid_json');
 }
+// Tries the chosen model; when Google answers "no such model" (404), moves on to the next candidate
+// (Pro -> Flash alias -> fixed Flash names), so a retired or not-yet-available model never blocks the feature.
+let workingFast = '';     // the Flash name that last answered, tried first for the rest of this visit
 export async function geminiJson(prompt, opts = {}) {
+  const first = opts.model || geminiModel(opts.modelTier);
+  const own = settings.model === 'own' && first === String(settings.modelOwn || '').trim().replace(/^models\//, '');
+  const flash = [workingFast, GEMINI_FAST, ...FAST_FALLBACKS].filter(Boolean);
+  const list = own ? [first] : [...new Set(first === GEMINI_PRO ? [GEMINI_PRO, ...flash] : [...flash, first])];
+  let lastErr = null;
+  for (const model of list) {
+    try {
+      const out = await geminiOnce(prompt, { ...opts, model });
+      if (model !== GEMINI_PRO) workingFast = model;
+      lastModel = model;
+      return out;
+    } catch (e) {
+      if (e?.code !== 'bad_model') throw e;
+      lastErr = e;
+    }
+  }
+  throw lastErr || err('bad_model');
+}
+export let lastModel = '';
+async function geminiOnce(prompt, opts = {}) {
   const key = geminiKey();
   if (!key) throw err('no_key');
   const model = opts.model || geminiModel(opts.modelTier);
@@ -249,7 +275,7 @@ function saveForm() {
   if (typed) { setGeminiKey(typed); $('#aiKey').value = ''; }
   geminiBlocked = false;
   syncForm(); changed();
-  if (settings.model === 'own' && !modelOk(own)) { setStatus('モデル名を入れてください（例: gemini-2.5-flash）。それまでは「おまかせ」と同じモデルを使います。', true); return false; }
+  if (settings.model === 'own' && !modelOk(own)) { setStatus('モデル名を入れてください（例: gemini-flash-latest）。それまでは「おまかせ」と同じモデルを使います。', true); return false; }
   return true;
 }
 async function testConnection() {
@@ -263,9 +289,8 @@ async function testConnection() {
     }
     if (!hasGeminiKey()) { setStatus('APIキーを入れてから押してください。', true); return; }
     setStatus('Gemini に接続しています…');
-    const model = geminiModel('quick');
     const out = await geminiJson('Reply with ONLY this JSON object: {"ok": true}', { modelTier: 'quick', timeout: 45000 });
-    setStatus(out && typeof out === 'object' ? `接続できました（モデル: ${model}）。AIボタンは Gemini を使います。` : '接続できましたが、答えの形が想定と違いました。', !(out && typeof out === 'object'));
+    setStatus(out && typeof out === 'object' ? `接続できました（モデル: ${lastModel}）。AIボタンは Gemini を使います。` : '接続できましたが、答えの形が想定と違いました。', !(out && typeof out === 'object'));
   } catch (e) {
     const code = e?.code || '';
     setStatus(code === 'timeout' ? '応答がありませんでした。少し待ってから押し直してください。' : `${providerErrorText(code)}。`, true);
