@@ -1,0 +1,389 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>スラ読オン読</title>
+<meta name="readflow-ocr" content="b64">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d2a3a'/%3E%3Cpath d='M12 25 20 7' stroke='%23e0525b' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="app/style.css">
+<link rel="stylesheet" href="app/structure.css">
+<link rel="stylesheet" href="app/tts.css">
+<link rel="stylesheet" href="app/sxai.css">
+<link rel="stylesheet" href="app/wordtap.css">
+<link rel="stylesheet" href="app/ai.css">
+<link rel="stylesheet" href="app/mobile.css">
+<meta name="theme-color" content="#f3f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161b22" media="(prefers-color-scheme: dark)">
+<header class="bar">
+  <div class="brand"><span class="mark" aria-hidden="true">/</span>スラ読オン読 <small>入試英文の音読ノート</small></div>
+  <p class="privacy" id="privacy">
+    <strong>PDFはこの端末の中だけで処理します。</strong>外部のOCRサービスには送信しません。PDF表示・OCRのライブラリと英語の言語データはこのフォルダに同梱しており、起動後はネット接続なしで動きます。日本語訳はブラウザ内蔵の端末内翻訳（Chrome/Edge）を使い、初回だけ翻訳データのダウンロードにネット接続が必要です。
+  </p>
+</header>
+
+<nav class="steps" aria-label="作業の流れ">
+  <a href="#s1" data-step="1">① PDFを開く</a>
+  <a href="#s2" data-step="2">② ページを選んで読み取る</a>
+  <a href="#s3" data-step="3">③ ページごとに確認</a>
+  <a href="#s4" data-step="4">④ 本文を仕上げる</a>
+  <a href="#s5" data-step="5">⑤ 区切って音読</a>
+  <button type="button" class="ai-open" id="aiOpen" aria-haspopup="dialog" title="AIの機能（訳・空欄・構文マーク・区切り・構文図・語の意味）に使うAIを選びます">AIの設定<small id="aiOpenName"></small></button>
+</nav>
+
+<main>
+<section id="s1" class="panel">
+  <h2>① PDFを開く</h2>
+  <div class="drop" id="drop" tabindex="0" role="button" aria-describedby="dropHint">
+    <input type="file" id="pdfFile" accept="application/pdf,.pdf" hidden>
+    <p class="drop-main">PDFをここにドロップ、または <button type="button" class="btn" id="choosePdf">PDFを選ぶ</button></p>
+    <p class="hint" id="dropHint">文字データのあるPDFはそのまま抽出し、スキャン画像だけのページは端末内でOCRします。英文を直接貼り付ける場合は手順4へ。</p>
+  </div>
+  <p class="status" id="loadStatus" role="status" aria-live="polite"></p>
+</section>
+
+<section id="s2" class="panel" hidden>
+  <h2>② ページを選んで読み取る</h2>
+  <p class="hint">英文本文のあるページを選びます。サムネイルをクリックするか、範囲を入力してください（例: <code>4-6, 8-10</code>）。日本語の設問だけのページは選ばないでください。</p>
+  <div class="row wrap">
+    <label class="field">ページ範囲 <input id="ranges" type="text" inputmode="numeric" placeholder="4-6, 8-10" autocomplete="off"></label>
+    <span class="hint" id="rangeInfo"></span>
+  </div>
+  <div class="thumbs" id="thumbs"></div>
+  <details class="settings">
+    <summary>OCRの設定</summary>
+    <div class="row wrap">
+      <label class="field">解像度
+        <select id="dpi"><option value="300" selected>300 dpi（標準）</option><option value="400">400 dpi（小さい文字・かすれ向け、遅い）</option><option value="200">200 dpi（速いが精度低め）</option></select>
+      </label>
+      <label class="field">レイアウト
+        <select id="psm"><option value="3" selected>自動（本文＋設問が混在するページ向け）</option><option value="4">1段組の本文</option><option value="6">均一な1ブロック</option></select>
+      </label>
+      <label class="field">文字データ
+        <select id="mode"><option value="auto" selected>自動（正しい文字データは使い、スキャンや画像はOCR）</option><option value="scantext">スキャンの文字データも使う（速いが語の区切りの誤りが残りやすい）</option><option value="ocr">すべてOCR（文字データが崩れている場合）</option></select>
+      </label>
+      <label class="check"><input type="checkbox" id="gray" checked> グレースケール化してからOCR</label>
+    </div>
+  </details>
+  <div class="row">
+    <button class="btn primary" id="runOcr" disabled>選んだページを読み取る</button>
+    <button class="btn" id="cancelOcr" hidden>中止</button>
+  </div>
+  <div class="progress" id="progressBox" hidden>
+    <div class="meter"><span id="meterAll"></span></div>
+    <p class="status" id="ocrStatus" role="status" aria-live="polite"></p>
+    <ol class="plog" id="pageLog"></ol>
+  </div>
+</section>
+
+<section id="s3" class="panel" hidden>
+  <h2>③ ページごとに確認・修正</h2>
+  <p class="hint">左の原本と見比べ、音読しない行（日本語の設問・語注・行番号・見出し）のチェックを外します。原本の上をドラッグすると（タッチ画面では「範囲を選ぶ」を押してから指でなぞると）、その範囲の行をまとめて外せます。自動判定は提案です。</p>
+  <div class="pagetabs" id="pageTabs" role="tablist"></div>
+  <div class="review" id="review">
+    <div class="preview-col">
+      <div class="preview-tools row wrap">
+        <button type="button" class="btn sm" id="regionMode" aria-pressed="false" title="オンの間は、原本の上を指でなぞると範囲を選べます（オフのときは指でスクロール）">範囲を選ぶ</button>
+        <button class="btn sm" id="regionExclude" disabled>範囲の行を外す</button>
+        <button class="btn sm" id="regionInclude" disabled>範囲の行を戻す</button>
+        <label class="check sm"><input type="checkbox" id="showLow" checked> 低信頼の語を黄色で表示</label>
+        <label class="field sm">拡大 <input type="range" id="zoom" min="60" max="200" value="100"></label>
+      </div>
+      <div class="preview" id="preview"><canvas id="pv"></canvas></div>
+    </div>
+    <div class="lines-col">
+      <div class="quality" id="quality"></div>
+      <div class="lines" id="lines"></div>
+      <label class="field block">このページの本文（直接修正できます）
+        <textarea id="pageText" spellcheck="true" lang="en"></textarea>
+      </label>
+      <div class="row wrap">
+        <button class="btn sm" id="rebuildPage">行の選択から作り直す</button>
+        <span class="hint" id="pageTextInfo"></span>
+      </div>
+      <div class="suspects" id="suspects"></div>
+    </div>
+  </div>
+  <div class="row"><button class="btn primary" id="toBody">確認したページを本文にまとめる</button></div>
+</section>
+
+<section id="s4" class="panel">
+  <h2>④ 本文を仕上げる</h2>
+  <p class="hint">ページの境目でつながる文は自動で1文に戻しています。段落は空行で区切ります。下線番号や空所記号は音読の邪魔になるので消すか、空所は答えの語に置き換えてください。</p>
+  <textarea id="body" class="body-text" spellcheck="true" lang="en" placeholder="ここに英文を貼り付けることもできます。"></textarea>
+  <div class="row wrap">
+    <span class="hint" id="bodyInfo"></span>
+    <button class="btn sm" id="dropMarkers" hidden>設問記号を消す</button>
+  </div>
+  <div class="markers" id="markers"></div>
+  <section class="blanks" id="blanks" aria-labelledby="blanksTitle" hidden>
+    <h3 id="blanksTitle">空欄を埋める <span class="bl-count" id="blankCount"></span></h3>
+    <p class="hint">答えの語を入れると、本文の空欄がその語になり、区切り・構文マーク・訳もその語で作り直します。下線部の番号など空欄でないものは、空のままにしてください。</p>
+    <ol class="bl-list" id="blankList"></ol>
+    <p class="hint bl-ai-note" id="blankAiNote" hidden>AIの答えは間違うことがあります。解答で確かめてから入れてください。</p>
+    <div class="bl-paste">
+      <label class="field block">解答をまとめて貼り付け
+        <textarea id="blankBulk" rows="2" lang="en" placeholder="(1) in (2) on ／ A: however B: therefore ／ 1-ウ ／ 1行に1つずつ"></textarea>
+      </label>
+      <label class="field block">選択肢を貼り付け（自動で見つからないとき）
+        <textarea id="choiceBulk" rows="2" lang="en" placeholder="(1) (a) in (b) on (c) at ／ 問2 ① however ② therefore ／ [ however / therefore / instead ]"></textarea>
+      </label>
+    </div>
+    <div class="row wrap">
+      <button type="button" class="btn sm" id="blankBulkApply">反映</button>
+      <button type="button" class="btn primary" id="blankFill">空欄に入れる</button>
+      <button type="button" class="btn" id="blankUndo" hidden>元に戻す</button>
+      <button type="button" class="btn" id="blankAi" hidden>AIで空欄を解く</button>
+    </div>
+    <p class="hint" id="blankInfo" role="status" aria-live="polite"></p>
+    <p class="hint bl-filled" id="blankFilled"></p>
+  </section>
+  <div class="row wrap">
+    <label class="field">区切りの細かさ
+      <select id="level"><option value="fine">細かめ（はじめて読む英文）</option><option value="standard" selected>標準</option><option value="coarse">大きめ（慣れてきたら）</option></select>
+    </label>
+    <span class="field" id="slPrefLabel">区切りの作り方</span>
+    <div class="seg slsrc" role="radiogroup" aria-labelledby="slPrefLabel">
+      <button type="button" role="radio" data-slpref="auto" aria-checked="true">自動<small>すぐ</small></button>
+      <button type="button" role="radio" data-slpref="ai" aria-checked="false" tabindex="-1">AI<small>より自然・少し時間がかかる</small></button>
+    </div>
+    <button class="btn primary" id="makeSlash">区切りを提案する</button>
+  </div>
+  <p class="hint slpref-why" id="slPrefWhy" hidden></p>
+</section>
+
+<section id="s5" class="panel" hidden>
+  <h2>⑤ 区切って音読</h2>
+  <div class="practice">
+    <div class="reader-col">
+      <div class="row wrap toolbar">
+        <div class="seg" data-group="show" role="radiogroup" aria-label="区切りの表示">
+          <button role="radio" data-show="on" aria-checked="true">区切りあり</button>
+          <button role="radio" data-show="clause" aria-checked="false">大きな区切りだけ</button>
+          <button role="radio" data-show="faint" aria-checked="false">薄く</button>
+          <button role="radio" data-show="off" aria-checked="false">なし</button>
+        </div>
+        <label class="check sm"><input type="checkbox" id="perLine"> 1区切り1行</label>
+        <button class="btn sm" id="editSlash">テキストで編集</button>
+        <button class="btn sm" id="copySlash">コピー</button>
+        <button class="btn sm" id="saveTxt">.txtで保存</button>
+        <button class="btn sm" id="printBtn">印刷・PDF</button>
+      </div>
+      <div class="row wrap toolbar slsrcbar">
+        <span class="field sm" id="slSrcLabel">区切りの作り方</span>
+        <div class="seg slsrc" role="radiogroup" aria-labelledby="slSrcLabel">
+          <button role="radio" data-slsrc="auto" aria-checked="true">自動<small>すぐ・規則で</small></button>
+          <button role="radio" data-slsrc="ai" aria-checked="false" tabindex="-1">AI<small>意味のまとまりで区切り直す</small></button>
+        </div>
+        <div class="sxsrc-status slsrc-status" id="slSrcStatus" hidden aria-live="polite"></div>
+      </div>
+      <div class="row wrap toolbar">
+        <span class="field sm">日本語</span>
+        <div class="seg seg-ja" role="radiogroup" aria-label="日本語の表示">
+          <button role="radio" data-ja="none" aria-checked="true">なし</button>
+          <button role="radio" data-ja="gloss" aria-checked="false">難しい語の意味</button>
+          <button role="radio" data-ja="tap" aria-checked="false">タップで区切りの訳</button>
+          <button role="radio" data-ja="chunk" aria-checked="false">区切りごとの訳</button>
+          <button role="radio" data-ja="full" aria-checked="false">全文訳</button>
+        </div>
+        <label class="check sm" title="本文の語をタップすると、その語の意味（辞書）・発音・文脈での意味（AI）を小さく表示します"><input type="checkbox" id="wordTap" checked> 語をタップで意味</label>
+        <button class="btn sm" id="trPrepare" hidden>翻訳データを準備</button>
+      </div>
+      <p class="hint" id="jaInfo" role="status" aria-live="polite"></p>
+      <div class="row wrap toolbar sxbar">
+        <span class="field sm">構文マーク</span>
+        <div class="sxset" role="group" aria-label="構文マークの種類">
+          <label class="check sm"><input type="checkbox" data-sx="rel"><span class="sxk">{ }</span>関係詞節</label>
+          <label class="check sm"><input type="checkbox" data-sx="noun"><span class="sxk">[ ]</span>名詞節</label>
+          <label class="check sm"><input type="checkbox" data-sx="adv"><span class="sxk">＜＞</span>副詞節</label>
+          <label class="check sm"><input type="checkbox" data-sx="subj"><span class="sxk sxk-u">S</span>長い主語</label>
+          <label class="check sm"><input type="checkbox" data-sx="verb"><span class="sxk">V</span>述語動詞</label>
+          <label class="check sm"><input type="checkbox" data-sx="post"><span class="sxk">( )</span>後置修飾</label>
+        </div>
+        <label class="field sm">品詞 <select id="posMode"><option value="off">なし</option><option value="tap">語をタップで表示</option><option value="all">すべての語に表示</option></select></label>
+        <button class="btn sm" id="sxEdit" aria-pressed="false" hidden>マークを直す</button>
+      </div>
+      <div class="row wrap toolbar sxsrcbar">
+        <span class="field sm" id="sxSrcLabel">マークの作り方</span>
+        <div class="seg sxsrc" data-group="sxsrc" role="radiogroup" aria-labelledby="sxSrcLabel">
+          <button role="radio" data-sxsrc="auto" aria-checked="true">自動<small>すぐ・簡易</small></button>
+          <button role="radio" data-sxsrc="ai" aria-checked="false" tabindex="-1">AI<small>全文を作り直す・より正確</small></button>
+        </div>
+        <div class="sxsrc-status" id="sxSrcStatus" hidden aria-live="polite"></div>
+      </div>
+      <div class="sxnote" id="sxNote" hidden>
+        <p class="sxlegend" id="sxLegend"></p>
+        <p class="hint" id="sxInfo" role="status" aria-live="polite"></p>
+        <div class="sxtools" id="sxTools" hidden>
+          <p class="hint">外す: 記号（{ } [ ] ＜＞ ( )）をクリック。付ける: 語を2つクリック（またはドラッグで選択）して、種類を押す。</p>
+          <div class="row wrap">
+            <span class="field sm">選んだ語に</span>
+            <button class="btn sm" data-sxadd="rel">{ }</button>
+            <button class="btn sm" data-sxadd="noun">[ ]</button>
+            <button class="btn sm" data-sxadd="adv">＜＞</button>
+            <button class="btn sm" data-sxadd="post">( )</button>
+            <button class="btn sm" data-sxadd="subj">下線</button>
+            <button class="btn sm" data-sxadd="verb">V</button>
+            <button class="btn sm" id="sxDrop">下線・Vを外す</button>
+            <button class="btn sm" id="sxReset">自動のマークに戻す</button>
+            <button class="btn sm" id="sxAiAsk" aria-pressed="false" hidden title="おかしいと思うマークのある文を1つ選んで、AIに正しいマークと解説を聞きます">この文だけAIに聞く</button>
+          </div>
+        </div>
+      </div>
+      <div class="sxai" id="sxAi" hidden aria-live="polite"></div>
+      <p class="hint">語と語のすき間をクリック（タップ）すると「/」を付け外しできます。区切りは意味・文法のまとまりを目安に自動提案したもので、正解は1つではありません。</p>
+      <div class="reader" id="reader" lang="en"></div>
+      <textarea id="slashEdit" class="body-text" hidden lang="en"></textarea>
+      <p class="hint" id="slashInfo"></p>
+      <div class="row wrap tts">
+        <button class="btn" id="play">お手本を聞く</button>
+        <button class="btn" id="pause" disabled aria-pressed="false">一時停止</button>
+        <button class="btn" id="stop" disabled>止める</button>
+        <button class="btn mk-now" id="mkNow" disabled title="いま読んでいる区切りに印をつけます">？ わかりにくい</button>
+        <label class="field sm">速さ <select id="rate"><option value="0.75">ゆっくり</option><option value="0.9" selected>やや遅め</option><option value="1">ふつう</option></select></label>
+        <label class="check sm"><input type="checkbox" id="chunkPause" checked> 区切りごとに間をとる</label>
+        <label class="check sm"><input type="checkbox" id="mkBtns" checked> 区切りごとに印ボタンを出す</label>
+        <label class="check sm"><input type="checkbox" id="ttsFollow" checked> 読んでいる所を自動で追う</label>
+      </div>
+      <p class="hint" id="ttsInfo" role="status" aria-live="polite"></p>
+      <p class="hint tts-keys">わかりにくい区切りは、その後ろの小さな「?」を押すと印がつきます（もう一度で外れます）。聞きながらなら「？ わかりにくい」でも付けられます（区切りが変わった直後0.6秒以内なら、ひとつ前の区切りに）。キー操作: <kbd>Space</kbd> 再生・一時停止・再開、<kbd>M</kbd> 印、<kbd>Esc</kbd> 止める。</p>
+      <div class="tts-bar" id="ttsBar" role="region" aria-label="読み上げの操作" hidden>
+        <div class="tts-bar-in">
+          <button type="button" class="btn" id="barPause" aria-pressed="false">一時停止</button>
+          <button type="button" class="btn" id="barStop">止める</button>
+          <button type="button" class="btn mk-now" id="barMk" title="いま読んでいる区切りに印をつけます">？ わかりにくい</button>
+          <button type="button" class="btn sm" id="barBack" hidden aria-label="読んでいる所へ戻る" title="読んでいる所へ戻って、自動で追いかけるのを再開します"><span class="bk-lg">読んでいる所へ</span><span class="bk-sh">いまの所へ</span> ↑</button>
+        </div>
+      </div>
+      <section class="mk-box" id="mkBox" aria-labelledby="mkTitle" hidden>
+        <h3 id="mkTitle">印をつけた所（<span id="mkCount">0</span>）
+          <button type="button" class="btn sm" id="mkPlayAll">印の所だけ続けて聞く</button>
+          <button type="button" class="btn sm" id="mkClear">印をすべて外す</button></h3>
+        <ol class="mk-list" id="mkList"></ol>
+      </section>
+      <p class="hint" id="mkInfo" role="status" aria-live="polite"></p>
+      <div class="row wrap sd-toggle-row"><button type="button" class="btn" id="sdToggle" aria-expanded="false" aria-controls="sdPanel">構文図（並列を縦にそろえる）</button></div>
+      <section class="sd-panel" id="sdPanel" aria-label="構文図" hidden></section>
+    </div>
+    <aside class="guide" id="guide">
+      <h3>練習の進め方</h3>
+      <ol class="plan" id="plan"></ol>
+      <div class="timer">
+        <h3>仕上げの音読を記録</h3>
+        <p class="hint">速さは目安です。意味が取れて、正確に、まとまりで読めているかを一緒に振り返ります。</p>
+        <div class="row"><button class="btn primary" id="timerBtn">計測スタート</button><output id="timerOut">0:00</output></div>
+        <form id="selfCheck" hidden>
+          <fieldset><legend>意味：読み終えて内容を日本語で説明できる</legend>
+            <label><input type="radio" name="mean" value="1">ほぼ無理</label><label><input type="radio" name="mean" value="2">一部</label><label><input type="radio" name="mean" value="3">だいたい</label><label><input type="radio" name="mean" value="4">要旨も細部も</label></fieldset>
+          <fieldset><legend>正確さ：読み間違い・言い直し</legend>
+            <label><input type="radio" name="acc" value="1">5回以上</label><label><input type="radio" name="acc" value="2">3〜4回</label><label><input type="radio" name="acc" value="3">1〜2回</label><label><input type="radio" name="acc" value="4">なし</label></fieldset>
+          <fieldset><legend>まとまり・抑揚：区切りで間をとり、文末で下げられた</legend>
+            <label><input type="radio" name="pros" value="1">単語ごと</label><label><input type="radio" name="pros" value="2">ときどき</label><label><input type="radio" name="pros" value="3">ほぼできた</label><label><input type="radio" name="pros" value="4">自然に</label></fieldset>
+          <label class="field block">要旨メモ（日本語で1〜2文）<textarea id="gist" rows="2"></textarea></label>
+          <button class="btn primary" type="submit">記録する</button>
+        </form>
+        <p class="hint">意味の評価が「一部」以下のときの語/分は、取り消し線で参考外として表示します。</p>
+        <table class="log" id="log"><thead><tr><th>日時</th><th>表示</th><th>語/分</th><th>意味</th><th>正確</th><th>まとまり</th></tr></thead><tbody></tbody></table>
+        <p class="hint" id="advice"></p>
+      </div>
+    </aside>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <details>
+    <summary>この練習方法の根拠と限界</summary>
+    <div id="evidence"></div>
+  </details>
+  <details>
+    <summary>単語の意味のデータ（出典・ライセンス）</summary>
+    <p>「難しい語の意味」は同梱の辞書データ（<code>vendor/dict/vocab.json</code>、CC BY-SA 4.0）を使っています。意味は辞書の最初の語義を短くしたもので、文脈に合わないことがあります。「難しい語」は CEFR B2 以上（英検準1級程度の目安）かつ使用頻度が低めの語です。「語をタップで意味」はこれに加えて <code>vendor/dict/basic.json</code>（基本語の語義を最大3つ、同じ出典・ライセンス）を使います。「文脈での意味をAIで」を押したときだけ、その1文を「AIの設定」で選んだAI（Claude または Gemini）に送ります。</p>
+    <ul>
+      <li>英和の語義: <a href="https://github.com/kujirahand/EJDict">EJDict-hand</a>（kujirahand, パブリックドメイン/CC0）</li>
+      <li>語のレベル: The CEFR-J Wordlist Version 1.5（投野由紀夫・東京外国語大学, © Tono Laboratory, TUFS, <a href="http://www.cefr-j.org/download.html">cefr-j.org</a>）、Octanove Vocabulary Profile C1/C2 1.0（Octanove Labs, CC BY-SA 4.0）— <a href="https://github.com/openlanguageprofiles/olp-en-cefrj">olp-en-cefrj</a></li>
+      <li>語の頻度: <a href="https://github.com/rspeer/wordfreq">wordfreq</a>（Robyn Speer, データ CC BY-SA 4.0。Google Books Ngrams、Leeds Internet Corpus、Wikipedia、ParaCrawl、OPUS OpenSubtitles 2018、SUBTLEX（Brysbaert ほか）を含む）</li>
+    </ul>
+    <p>まとめたデータは <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja">CC BY-SA 4.0</a> で配布します。語義は短縮し、一部を手で修正しています。詳細は <code>vendor/dict/LICENSE-dict.md</code>。</p>
+  </details>
+  <details>
+    <summary>構文マーク・品詞の仕組み（ライブラリ）</summary>
+    <p>品詞の判定には同梱の <a href="https://github.com/spencermountain/compromise">compromise</a> 14.16.0（Spencer Kelly, MIT License, <code>vendor/compromise/LICENSE</code>）を使い、その結果から節の範囲（関係詞節・名詞節・副詞節など）をこのアプリの規則で推定しています。処理はすべてこの端末の中で行い、英文は外部に送信しません。自動判定のため、マークや品詞には誤りがあります。</p>
+  </details>
+</footer>
+
+<dialog id="printDlg" aria-labelledby="printTitle">
+  <form id="printForm" method="dialog">
+    <h2 id="printTitle" tabindex="-1" autofocus>印刷・PDFにする</h2>
+    <p class="hint">「印刷する」でブラウザの印刷画面が開きます。プリンターに「PDFに保存」（または Microsoft Print to PDF）を選ぶとPDFになります。</p>
+    <div class="pgrid">
+      <label class="field block">タイトル <input type="text" name="pTitle" autocomplete="off"></label>
+      <fieldset><legend>区切り</legend>
+        <label><input type="radio" name="pSlash" value="on" checked>あり</label>
+        <label><input type="radio" name="pSlash" value="clause">大きな区切りだけ</label>
+        <label><input type="radio" name="pSlash" value="off">なし</label></fieldset>
+      <fieldset><legend>日本語</legend>
+        <label><input type="checkbox" name="pGloss">難しい語の意味</label>
+        <label><input type="radio" name="pJa" value="none" checked>訳なし</label>
+        <label><input type="radio" name="pJa" value="sentence">文ごとの訳</label>
+        <label><input type="radio" name="pJa" value="chunk">区切りごとの訳</label></fieldset>
+      <fieldset><legend>構文</legend>
+        <label><input type="checkbox" name="pMarks">構文マーク（画面で選んだ種類）</label>
+        <label><input type="checkbox" name="pPos">品詞</label></fieldset>
+      <fieldset><legend>書き込み</legend>
+        <label><input type="radio" name="pWrite" value="none" checked>しない（詰めて印刷）</label>
+        <label><input type="radio" name="pWrite" value="space">行間を広く</label>
+        <label><input type="radio" name="pWrite" value="ruled">行間を広く＋罫線</label>
+        <label><input type="checkbox" name="pNotes">段落ごとにメモ欄</label></fieldset>
+      <fieldset><legend>文字の大きさ</legend>
+        <label><input type="radio" name="pSize" value="s">小</label>
+        <label><input type="radio" name="pSize" value="m" checked>中</label>
+        <label><input type="radio" name="pSize" value="l">大</label></fieldset>
+    </div>
+    <p class="hint err" id="printNote"></p>
+    <div class="pprev-wrap"><div id="printPreview" class="pprev"></div></div>
+    <div class="row"><button type="button" class="btn primary" id="printGo">印刷する</button><button type="button" class="btn" id="printClose">閉じる</button></div>
+  </form>
+</dialog>
+<div id="printArea" aria-hidden="true"></div>
+<dialog id="aiDlg" class="ai-dlg" aria-labelledby="aiTitle">
+  <form method="dialog" id="aiForm" autocomplete="off">
+    <h2 id="aiTitle">AIの設定</h2>
+    <p class="hint">ここで選んだAIを、訳・空欄・構文マーク・区切り・構文図・語の意味のAIボタンすべてで使います。送るのはボタンを押したときの英文だけで、PDFは送りません。</p>
+    <fieldset class="ai-prov"><legend>AIの提供元</legend>
+      <label><input type="radio" name="aiProv" value="claude"> Claude <small>claude.ai で開いたとき（リンク版）</small></label>
+      <label><input type="radio" name="aiProv" value="gemini"> Gemini <small>自分の APIキーで（Google AI Studio）</small></label>
+    </fieldset>
+    <div id="aiGemini" class="ai-gem" hidden>
+      <label class="field block">Gemini の APIキー
+        <input type="password" id="aiKey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="キーを貼り付け" aria-describedby="aiKeyState aiKeyNote"></label>
+      <p class="hint" id="aiKeyState"></p>
+      <p class="hint" id="aiKeyNote">キーは <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio（aistudio.google.com/apikey）</a> で作れます。<strong class="ai-warn">APIキーはこの端末のこのブラウザにだけ保存されます。他人の端末では入力しないでください。</strong></p>
+      <div class="row wrap">
+        <label class="field">モデル
+          <select id="aiModel">
+            <option value="auto">おまかせ（ふだんは gemini-2.5-flash、難しい処理は gemini-2.5-pro）</option>
+            <option value="flash">いつも gemini-2.5-flash（速い）</option>
+            <option value="pro">いつも gemini-2.5-pro（より正確・遅い・上限が少なめ）</option>
+            <option value="own">モデル名を入力する</option>
+          </select></label>
+        <label class="field" id="aiModelOwnWrap" hidden>モデル名 <input type="text" id="aiModelOwn" autocomplete="off" spellcheck="false" placeholder="gemini-2.5-flash"></label>
+      </div>
+    </div>
+    <p class="hint" id="aiEnvNote"></p>
+    <p class="ai-status" id="aiStatus" role="status" aria-live="polite"></p>
+    <div class="row wrap">
+      <button type="button" class="btn primary" id="aiSave">保存</button>
+      <button type="button" class="btn" id="aiTest">接続テスト</button>
+      <button type="button" class="btn" id="aiClearKey">キーを消す</button>
+      <button type="button" class="btn" id="aiClose">閉じる</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="askDlg" aria-labelledby="askMsg">
+  <p id="askMsg"></p>
+  <div class="row"><button type="button" class="btn primary" id="askYes">はい</button><button type="button" class="btn" id="askNo">キャンセル</button></div>
+</dialog>
+
+<script src="vendor/tesseract/tesseract.min.js"></script>
+<script type="module" src="app/main.js"></script>
+<script type="module" src="app/tts.js"></script>
+<script type="module" src="app/wordtap.js"></script>
+
+</body></html>

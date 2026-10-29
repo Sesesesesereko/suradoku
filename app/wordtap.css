@@ -1,0 +1,31 @@
+/* 語をタップで意味 (app/wordtap.js). A slip of paper under the word: sheet, thin rule, no shadow, no pills. */
+.reader.wt-on .w{cursor:pointer}
+.wt-pop{position:absolute;z-index:19;max-width:min(92vw,360px);box-sizing:border-box;background:var(--sheet);color:var(--ink);
+  border:1px solid var(--rule);border-top:2px solid var(--ink);border-radius:2px;padding:8px 12px 8px;font:14px/1.7 var(--ui);text-align:left}
+.wt-pop.wt-above{border-top-width:1px;border-bottom:2px solid var(--ink)}
+.wt-pop p{margin:2px 0}
+.wt-head{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap;padding-right:28px;position:relative}
+.wt-word{font:600 19px/1.4 var(--en);letter-spacing:.005em;overflow-wrap:anywhere}
+.wt-pos{font-size:12.5px;color:var(--note)}
+.wt-lv{font-size:11.5px;color:var(--ink-2);border-bottom:1px solid var(--line);line-height:1.3}
+.wt-pop .wt-x{position:absolute;right:-6px;top:-4px;text-decoration:none;font-size:18px;line-height:1;padding:4px 8px;color:var(--ink-2)}
+.wt-k{font-size:12px;color:var(--ink-2)}
+.wt-base b,.wt-also b,.wt-parts b,.wt-ai-h b{font:600 15px/1.5 var(--en)}
+.wt-note{font-size:12.5px;color:var(--ink-2)}
+.wt-senses{margin:4px 0 2px;padding-left:1.4em}
+.wt-senses li{padding-left:.1em}
+.wt-senses li::marker{color:var(--ink-2);font-size:12px}
+.wt-parts{margin:2px 0;padding-left:1.1em}
+.wt-also{font-size:13px}
+.wt-none{font-weight:700;margin:6px 0 2px!important}
+.wt-pop .wt-src{font-size:11.5px;line-height:1.6;margin-top:4px}
+.wt-ai:not(:empty){margin-top:6px;padding-top:6px;border-top:1px dashed var(--rule);font-size:13.5px}
+.wt-ai-m{font-weight:700;font-size:15px}
+.wt-ai-n{font-size:13px;color:var(--ink-2)}
+.wt-err{color:var(--pencil)}
+.wt-actions{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px;border-top:1px solid var(--rule);padding-top:4px}
+.wt-actions .btn.sm{padding:5px 2px;min-height:32px}
+.wt-actions .btn.sm.primary{padding:4px 10px;text-decoration:none;background:transparent;color:var(--ink);font-weight:700}
+@media (hover:hover){.wt-actions .btn.sm.primary:hover:not(:disabled){background:color-mix(in srgb,var(--ink) 7%,transparent)}}
+.wt-pop .wt-why{font-size:11.5px;margin-top:2px}
+@media print{.wt-pop{display:none!important}}

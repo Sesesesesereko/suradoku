@@ -1,0 +1,61 @@
+/* 構文図: a sentence laid out like a printed 参考書 diagram.
+   Conjuncts of a coordination stand under each other behind one thin blue-black rule, with the
+   coordinator in a gutter column on the left. Brackets and S/V/O/C labels in --sx ink; no red (red is for slashes). */
+.sd-toggle-row{margin:2px 0 6px}
+.sd-panel{min-width:0;max-width:100%;margin:4px 0 14px;padding:8px 0 4px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.sd-panel .row{margin:6px 0}
+.sd-tools{gap:6px 14px}
+.sd-nav{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%}
+.sd-nav select{min-width:0;max-width:min(28em,52vw);font-size:13px;padding:3px 6px}
+.sd-why{margin:0}
+.sd-legend{margin:2px 0;font-size:12px;line-height:1.8;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:0 12px}
+.sd-legend b{font:700 12px/1 var(--en);color:var(--sx);margin-right:3px}
+.sd-legpar{display:inline-block;width:0;height:1.1em;border-left:1.5px solid var(--sx);vertical-align:-.2em;margin-right:5px}
+
+.sd-out{margin-top:6px}
+.sd-item{margin:0 0 12px;padding:0}
+.sd-out.sd-all .sd-item{padding-bottom:10px;border-bottom:1px solid var(--rule);break-inside:avoid}
+.sd-out.sd-all .sd-item:last-child{border-bottom:0}
+.sd-cap{display:flex;gap:10px;align-items:baseline;font:12px/1.6 var(--ui);color:var(--ink-2);margin-bottom:2px}
+.sd-no{font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.sd-no::after{content:"."}
+.sd-tag{border-bottom:1px solid var(--line)}
+.sd-tag.ai{color:var(--sx);border-bottom-color:var(--sx);font-weight:700}
+.sd-exp{margin:6px 0 0;padding-left:12px;border-left:2px solid var(--rule);font:13.5px/1.8 var(--ui);color:var(--ink);max-width:70ch}
+
+/* The diagram itself scrolls sideways when a sentence is too wide; the page never does. */
+.sd-box{overflow-x:auto;max-width:100%;contain:inline-size;padding:6px 2px 8px;-webkit-overflow-scrolling:touch}
+.sd-fig{font:18px/2.15 var(--en);color:var(--ink);width:max-content;min-width:100%;max-width:62em}
+@media (max-width:640px){.sd-fig{font-size:16px;max-width:none}}
+.sd-in{white-space:normal}
+
+/* prefix + stacked column: "Scientists believe ┃ that ... / and ... ┃" */
+.sd-row{display:flex;align-items:baseline;gap:0 .45em;min-width:0}
+.sd-pre{flex:0 1 auto;max-width:20em}
+.sd-col{display:flex;flex-direction:column;align-items:flex-start;flex:1 1 auto;min-width:10em}
+.sd-line{display:block}
+.sd-row.sd-drop{flex-direction:column;align-items:stretch}
+.sd-row.sd-drop>.sd-pre{max-width:none}
+.sd-row.sd-drop>.sd-col{padding-left:1.6em}
+
+/* 並列: gutter (coordinator, right-aligned) | conjuncts behind one continuous rule */
+.sd-par{display:grid;grid-template-columns:max-content minmax(10em,max-content);column-gap:.45em;row-gap:0;align-items:baseline;margin:.1em 0}
+.sd-gut{text-align:right;min-width:1.6em;white-space:nowrap}
+.sd-conj{border-left:1.5px solid var(--sx);padding:0 0 0 .55em;min-width:0}
+.sd-par>.sd-conj:nth-child(2){border-top-left-radius:0}
+.sd-cc{font-style:italic;font-weight:600;color:var(--sx)}
+.sd-plab{font:500 10.5px/1 var(--ui);color:var(--sx);letter-spacing:.04em;vertical-align:.3em}
+
+/* clauses: brackets in --sx; a block clause keeps its brackets outside the stacked part */
+.sd-br{color:var(--sx);font-weight:500;margin:0 .06em}
+.sd-clause{display:flex;align-items:baseline;gap:0 .1em}
+.sd-clause>.sd-br:last-child{align-self:flex-end}
+.sd-iclause{white-space:normal}
+
+/* S / V / O / C: a small raised label before the part, the part underlined (S O C) or bold (V). */
+.sd-role::before{content:attr(data-r);font:700 .52em/1 var(--ui);color:var(--sx);vertical-align:.95em;margin-right:.18em;letter-spacing:0;user-select:none;-webkit-user-select:none}
+.sd-role[data-r^="S"]>*,.sd-role[data-r^="O"]>*,.sd-role[data-r^="C"]>*{text-decoration:underline;text-decoration-color:var(--ink-2);text-decoration-thickness:.06em;text-underline-offset:.24em;text-decoration-skip-ink:none}
+.sd-role[data-r^="V"]>*{font-weight:700}
+.sd-role[data-r^="M"]>*{color:var(--ink-2)}
+.sd-rowrole{display:flex;align-items:baseline;gap:0 .2em}
+.sd-rl{font:700 .52em/1 var(--ui);color:var(--sx);align-self:flex-start;margin-top:.55em}

@@ -1,0 +1,68 @@
+/* お手本の読み上げ（いま読んでいる区切り）と「わかりにくい」印。 Loaded after style.css. */
+:root{
+  --now-bg:#dde9fb; --now-line:#1f4fb8;          /* いま読んでいる所: pale blue band + strong blue underline */
+  --mk-bg:#fbe3cf; --mk-ink:#a84a0c;             /* わかりにくい印: peach tint + burnt-orange "?" */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --now-bg:#22395e; --now-line:#8fb4ff; --mk-bg:#4a2e17; --mk-ink:#ffb27a; }
+}
+:root[data-theme="dark"]{ --now-bg:#22395e; --now-line:#8fb4ff; --mk-bg:#4a2e17; --mk-ink:#ffb27a; }
+
+/* Text colour stays var(--ink); the band is full height and the underline is a box-shadow (not
+   text-decoration, which the long-subject mark uses). */
+.reader .w.chunk-now,.reader .w.tapped{background:var(--now-bg);color:var(--ink);box-shadow:inset 0 -.12em 0 var(--now-line);border-radius:2px}
+.reader .w.mk{background:var(--mk-bg);color:var(--ink)}
+.reader .w.mk.chunk-now{background:var(--now-bg)}
+.reader .mk-q{display:inline-block;font:700 .55em/1 var(--ui);color:var(--mk-ink);vertical-align:.95em;margin-right:.12em;user-select:none;-webkit-user-select:none}
+
+/* 区切りごとの「?」印ボタン (span role=button, display:inline so it never wraps away from its word):
+   visually small, touch target ~30px via ::after. The glyph is CSS content (never copied, never read aloud). */
+.reader .mk-b{position:relative;display:inline;margin-left:.14em;padding:.12em .34em;
+  font:700 .5em/1 var(--ui);vertical-align:.95em;color:var(--ink-2);background:transparent;border:1px solid color-mix(in srgb,var(--ink-2) 40%,transparent);
+  border-radius:3px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;opacity:.75;outline:0}
+.reader .mk-b::before{content:"?"}
+.reader .mk-b::after{content:"";position:absolute;inset:-.85em -.6em}
+@media (hover:hover){.reader .mk-b:hover{opacity:1;color:var(--mk-ink);border-color:var(--mk-ink)}}
+.reader .mk-b:focus-visible{opacity:1;outline:2px solid var(--now-line);outline-offset:1px}
+.reader .mk-b[aria-pressed="true"]{opacity:1;color:var(--mk-ink);background:var(--mk-bg);border-color:var(--mk-ink)}
+.reader.faint .mk-b:not([aria-pressed="true"]){opacity:.4}
+.reader.off .mk-b:not([aria-pressed="true"]){display:none}      /* 「なし」: no hint of where chunks end */
+.reader[data-ja="chunk"] .mk-b{vertical-align:.6em}
+@media (hover:none){ .reader .mk-b{opacity:.85} }
+@media print{ .reader .mk-b{display:none} }
+
+.tts .btn#pause{min-width:6.5em}
+.tts .mk-now{border-color:var(--mk-ink);color:var(--mk-ink)}
+@media (hover:hover){.tts .mk-now:hover:not(:disabled){background:color-mix(in srgb,var(--mk-bg) 70%,transparent)}}
+.tts-keys{margin-top:0}
+.tts-keys kbd{font:inherit;font-size:12px;padding:0 .35em;border:1px solid var(--line);border-radius:2px}
+
+.mk-box{margin:6px 0 14px;padding-top:8px;border-top:1px solid var(--rule)}
+.mk-box h3{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:0 0 4px}
+.mk-list{list-style:none;margin:0;padding:0}
+.mk-list li{display:flex;align-items:baseline;gap:6px;padding:3px 0;border-bottom:1px solid var(--rule)}
+.mk-list .mk-text{flex:1;min-width:0;font:17px/1.6 var(--en);overflow-wrap:anywhere;cursor:pointer}
+.mk-list .mk-text::before{content:"?";font:700 11px/1 var(--ui);color:var(--mk-ink);margin-right:.4em;vertical-align:.4em}
+.mk-list .btn.sm{text-decoration:none;padding:1px 6px;font-size:13px}
+.mk-list .mk-play{color:var(--now-line)}
+.mk-list .mk-del{color:var(--ink-2)}
+@media (hover:hover){.mk-list .mk-del:hover{color:var(--pencil)}}
+
+/* 再生中だけ出る下の操作バー: always reachable while the page is scrolled anywhere. */
+.tts-bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--sheet);border-top:1px solid var(--rule);
+  padding:8px max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.tts-bar[hidden]{display:none}
+.tts-bar-in{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;max-width:1280px;margin:0 auto}
+.tts-bar .btn:not(.sm){padding:7px 12px}
+.tts-bar #barPause{min-width:6.2em}
+.tts-bar #barBack{margin-left:auto;color:var(--now-line);white-space:nowrap}
+body.tts-bar-on{padding-bottom:var(--tts-bar-h,0px)}
+@media (max-width:420px){
+  .tts-bar-in{gap:6px 5px}
+  .tts-bar .btn:not(.sm){padding:7px 8px}
+  .tts-bar #barPause{min-width:5em}
+  .tts-bar #barBack{padding-inline:2px}
+}
+.tts-bar .bk-sh{display:none}
+@media (max-width:440px){ .tts-bar .bk-lg{display:none} .tts-bar .bk-sh{display:inline} }
+@media print{ .tts-bar{display:none!important} body.tts-bar-on{padding-bottom:0} }

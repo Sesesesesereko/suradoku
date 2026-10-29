@@ -1,0 +1,20 @@
+/* 「AIの設定」: a small button that stays at the right end of the sticky step bar, and its dialog (app/ai.js). */
+.steps .ai-open{position:sticky;right:0;margin-left:auto;flex:none;white-space:nowrap;font:inherit;font-size:13px;color:var(--ink-2);background:var(--paper);border:0;border-left:1px solid var(--rule);padding:9px 0 7px 12px;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:.28em}
+.steps .ai-open:hover{color:var(--ink);text-decoration-color:var(--ink)}
+.steps .ai-open small{margin-left:.4em;font-size:11.5px;color:var(--ink-2);text-decoration:none;display:inline-block}
+.ai-dlg{max-width:min(560px,94vw);border:1px solid var(--ink);border-radius:2px;background:var(--paper);color:var(--ink);padding:20px 22px}
+.ai-dlg::backdrop{background:rgba(16,20,28,.5)}
+.ai-dlg h2{margin:0 0 4px;font-size:19px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.ai-prov{border:0;padding:0;margin:10px 0 4px}
+.ai-prov legend{font-size:13.5px;font-weight:700;padding:0;margin-bottom:4px}
+.ai-prov label{display:flex;gap:6px;align-items:baseline;margin:3px 0;font-size:14px;cursor:pointer}
+.ai-prov small{color:var(--ink-2);font-size:12.5px}
+.ai-gem{border-left:2px solid var(--rule);padding-left:12px;margin:6px 0}
+.ai-gem input[type=password]{font:inherit;color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:2px;padding:6px 8px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.ai-gem select{max-width:100%;min-width:0;font:inherit;font-size:13.5px}
+.ai-gem .row .field{flex-wrap:wrap;max-width:100%;min-width:0;white-space:nowrap}
+.ai-gem .row .field select{white-space:normal;flex:1 1 12em}
+.ai-gem #aiModelOwn{width:14em}
+.ai-warn{display:block;color:var(--warn);font-weight:700;margin-top:2px}
+.ai-status{margin:8px 0 0;font-size:13.5px;line-height:1.7;min-height:1.7em;color:var(--ok)}
+.ai-status.err{color:var(--pencil)}

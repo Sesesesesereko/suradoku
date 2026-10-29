@@ -1,0 +1,152 @@
+/* iPhone / iPad: touch targets, narrow layouts, safe areas, iOS input zoom. Linked LAST in index.html.
+   Same design language as style.css: paper and ink, thin rules, no shadows, no pills.
+   Breakpoints: ≥1024px reader + guide side by side; <1024px guide below; ≤640px phone. */
+
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* No double-tap zoom on controls and the reader (keeps pinch-zoom), so fast taps on gaps never zoom. */
+html,body,button,a,label,summary,select,input,textarea,[role=button],[role=radio],.reader,.thumbs,.seg,.steps{touch-action:manipulation}
+/* iOS paints a dark grey flash on tapped links/buttons; a faint ink tint instead, and none inside the reader
+   (a tapped gap shows its slash and a tapped word its popover immediately). */
+body{-webkit-tap-highlight-color:rgba(28,36,48,.10)}
+.reader,.reader *{-webkit-tap-highlight-color:transparent}
+/* The reader's English stays selectable and copyable (long-press → コピー / 調べる is useful for learners);
+   only the invisible hit areas and the "?" buttons drop the callout and selection. Safari still needs the prefix. */
+.reader .gap,.reader .mk-b{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.reader ruby.w rt{-webkit-user-select:none}
+/* A short tint while a tappable word is pressed. Besides the feedback, the :active rule marks the words as tap
+   targets for the browser's touch adjustment, which otherwise snaps a tap on a short word ("a", "two") to the
+   neighbouring slash gap (a button) and toggles a slash instead of opening the meaning. */
+.reader.wt-on .w:active,.reader[data-ja="tap"] .w:active,.reader.sx-pos-tap .w:active,.reader.sx-editing .w:active,.reader.sxai-picking .w:active{background-color:color-mix(in srgb,var(--now-bg,#dde9fb) 60%,transparent)}
+
+/* Heights that follow the visible viewport (iOS toolbars). svh = stable smallest viewport, no jumps while scrolling. */
+@supports (height:1svh){
+  .preview{max-height:78svh}
+  .lines{max-height:34svh}
+  .bl-list{max-height:min(60svh,520px)}
+  .pprev-wrap{max-height:46svh}
+}
+dialog{max-height:calc(100vh - 24px);overscroll-behavior:contain}
+@supports (height:1dvh){dialog{max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}}
+#printDlg,.ai-dlg,#askDlg{max-width:min(980px,calc(100vw - 16px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)))}
+.ai-dlg{max-width:min(560px,calc(100vw - 16px))}
+#askDlg{max-width:min(460px,calc(100vw - 16px))}
+
+/* Long unbroken strings (URLs, file names) never widen the page. */
+.panel,.foot,.hint,.status,.markers{overflow-wrap:anywhere}
+main,.panel,.practice>*,.review>*{min-width:0}
+
+/* Reader + guide side by side only when there is room for both (iPad landscape, desktop). */
+@media (max-width:1023.98px){
+  .practice{grid-template-columns:minmax(0,1fr)}
+  .guide{border-left:0;padding-left:0;border-top:1px solid var(--rule);padding-top:16px}
+  .reader{max-width:none}
+}
+
+/* Step ③ preview: on touch a one-finger drag scrolls (page and preview); 「範囲を選ぶ」 switches it to drawing a range.
+   A tap still toggles the line under the finger. Mouse and pen drags always draw (touch-action does not affect a mouse). */
+.preview{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.preview canvas{touch-action:pan-x pan-y pinch-zoom}
+.preview canvas.selecting{touch-action:none}
+#regionMode{display:none}
+#regionMode[aria-pressed=true]{color:var(--paper);background:var(--ink);text-decoration:none}
+
+/* ---------- touch screens: targets of about 44px ---------- */
+@media (any-pointer:coarse){
+  #regionMode{display:inline-block}
+  /* Inputs at 16px or more: iOS zooms the page when a smaller field is focused. */
+  input[type=text],input[type=password],input[type=search],input[type=number],input:not([type]),select,textarea,.bl-input{font-size:16px!important}
+  input[type=text],input[type=password],select{min-height:44px}
+  .sd-nav select{font-size:16px;padding:6px 8px}
+
+  .btn{min-height:44px;padding-block:9px}
+  .btn.primary{padding-block:10px}
+  .btn.sm{min-height:44px;padding:8px 6px}
+  .toolbar .btn.sm{padding-inline:6px}
+  .btn.sm.primary{padding:8px 12px}
+  .steps a{padding:12px 0 10px}
+  .seg{gap:0 16px}
+  .seg button{min-height:44px;padding:8px 2px 6px}
+  .seg button small{display:block;margin-left:0}
+  .pagetabs button{min-height:40px;padding:8px 14px 6px}
+  .check,.field.sm,.check.sm{min-height:44px}
+  input[type=checkbox],input[type=radio]{width:20px;height:20px;margin:0 4px 0 0;flex:none}
+  .sxset{gap:0 14px}
+  fieldset label,.pgrid fieldset label{display:inline-flex;align-items:center;gap:4px;min-height:44px;margin:0 14px 0 0}
+  .ai-prov label{min-height:40px;align-items:center}
+  details>summary{min-height:44px;display:flex;align-items:center}
+  .settings summary{display:flex}
+  .plan .reps input{width:24px;height:24px}
+  .line{padding-block:8px}
+  .line .cut{padding:8px 6px;margin:-8px -6px}
+  .suspects button{padding:6px 4px;margin:2px 8px 2px 0}
+  .bl-ch{min-height:44px;padding:8px 12px}
+  .reader .ja-edit,.reader .ja-more{padding:10px 6px;margin-block:-10px}
+  .reader .cu-ja .ja-edit{padding:6px 8px;margin-block:-6px}
+  .mk-list li{min-height:44px;align-items:center}
+  .mk-list .btn.sm{min-width:44px}
+  .tts-bar .btn:not(.sm){min-height:44px}
+  .tts-bar #barBack{min-height:44px}
+
+  /* Slash gaps: a wider and taller invisible hit area than the mouse needs (layout unchanged — only ::before grows).
+     It reaches .3em back over the end of the word before and covers the space plus about .2em of the next word, and the
+     full line height, so a fingertip between two words lands on the gap; the middle of a word (even "a") still opens its meaning. */
+  .reader .gap::before{top:-.55em;bottom:-.55em;left:-.3em;width:.75em}
+  .reader .gap.on::before{left:-.35em;width:calc(100% + .7em)}
+  .reader.clause .gap.on:not(.major)::before,.reader.off .gap.on::before{left:-.3em;width:.75em}
+  .reader[data-ja="chunk"] .gap::before{top:-.25em;bottom:-.25em}
+  /* 「?」 per chunk: visually unchanged, its hit area grows to about 36×28px. */
+  .reader .mk-b::after{inset:-1.15em -.75em}
+
+  /* Word popover: a 44px close button and a body that scrolls on short screens. */
+  .wt-head{padding-right:40px}
+  .wt-pop .wt-x{right:-12px;top:-10px;min-width:44px;min-height:44px;padding:0;display:flex;align-items:center;justify-content:center}
+  .wt-actions .btn.sm{min-height:44px;padding:8px 4px}
+}
+.wt-pop{max-height:min(70vh,560px);overflow:auto;overscroll-behavior:contain}
+@supports (height:1svh){.wt-pop{max-height:min(70svh,560px)}}
+
+/* ---------- narrow screens (iPad split view, phones) ---------- */
+@media (max-width:760px){
+  .review{gap:14px}
+  .preview-tools{gap:4px 12px}
+  .bar{flex-direction:column;gap:8px;padding-block:14px 12px}
+  .brand{white-space:normal;flex-wrap:wrap}
+  .privacy{max-width:none}
+  /* Segmented controls keep one line and scroll sideways inside themselves (never the page). */
+  .seg{flex-wrap:nowrap;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .seg::-webkit-scrollbar{display:none}
+  .seg button{flex:none}
+  .toolbar{row-gap:4px}
+  .seg{flex:1 1 auto;min-width:0}
+  .sxsrcbar,.slsrcbar{align-items:center}
+}
+@media (max-width:640px){
+  .panel{padding:20px 0 24px}
+  .row{gap:8px 12px}
+  #ranges{width:100%;max-width:14em}
+  .field{flex-wrap:wrap}
+  .body-text{min-height:200px}
+  .drop{padding:16px}
+  .reader{padding-inline:0}
+  /* print dialog: one column of options, a smaller preview page. */
+  #printDlg{padding:16px 14px}
+  .pgrid{grid-template-columns:minmax(0,1fr)}
+  .pprev{padding:16px 14px}
+  .log{font-size:12px}
+  .log th,.log td{padding:3px 2px}
+  .bl-item{gap:4px 8px}
+  .tts .row,.tts{gap:6px 10px}
+}
+/* Phones in landscape: little height. Keep the sticky step bar thin. */
+@media (max-height:500px) and (any-pointer:coarse){
+  .steps a{padding:8px 0 6px}
+  .panel{scroll-margin-top:44px}
+}
+
+/* Dialogs on phones: the heading takes the initial focus (no keyboard popping up over the options) and the
+   action buttons stay at the bottom edge while the options scroll. */
+#printTitle:focus{outline:none}
+#printForm>.row:last-child{position:sticky;bottom:-20px;margin:12px -22px -20px;padding:10px 22px calc(12px + env(safe-area-inset-bottom,0px));background:var(--paper);border-top:1px solid var(--rule);z-index:1}
+@media (max-width:640px){#printForm>.row:last-child{margin-inline:-14px;padding-inline:14px;bottom:-16px;margin-bottom:-16px}}
+/* Phones: the sticky 「AIの設定」 button keeps only its label so it never clips at the screen edge. */
+@media (max-width:520px){ .steps .ai-open small{display:none} .steps .ai-open{padding-right:2px} }

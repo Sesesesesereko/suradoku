@@ -1,0 +1,54 @@
+/* 構文マークをAIに聞く (app/sxai.js). Uses the tokens from style.css. */
+.sxai{margin:6px 0 4px;padding:10px 12px 8px;border:1px solid var(--rule);border-left:3px solid var(--sx);background:var(--sheet);border-radius:2px;max-width:76ch}
+.sxai p{margin:2px 0}
+.sxai .row{margin:6px 0 2px;gap:4px 10px}
+.sxai-lead{font-size:13.5px}
+.sxai-label{font-size:12px;color:var(--ink-2);margin-top:6px!important}
+.sxai-sent{font:17px/2 var(--en);color:var(--ink);overflow-wrap:anywhere}
+.sxai-sent .sx{color:var(--sx);font-weight:600;margin:0 .03em}
+.sxai-sent .sx-nb{white-space:nowrap}
+.sxai-sent .sx-subj{text-decoration:underline;text-decoration-color:var(--ink);text-decoration-thickness:.07em;text-underline-offset:.24em;text-decoration-skip-ink:none}
+.sxai-sent .w.sx-verb{font-weight:700}
+.sxai-sent .w.sx-vstart::before{content:"V";font:700 .5em/1 var(--ui);color:var(--sx);vertical-align:.95em;margin-right:.15em}
+.sxai-sent .sxai-chg{color:var(--pencil);background:var(--pencil-soft);border-radius:2px}
+.sxai-sent .sxai-chgw{background:var(--pencil-soft);border-radius:2px}
+.sxai-cmp{border-top:1px dashed var(--rule);margin-top:6px}
+.sxai-diff{list-style:none;padding:0;margin:6px 0;font-size:13px}
+.sxai-diff li{display:flex;gap:8px;align-items:baseline;line-height:1.7}
+.sxai-diff li span[lang=en]{font-family:var(--en)}
+.sxai-tag{flex:none;font-size:11.5px;padding:0 6px;border-radius:2px;border:1px solid currentColor}
+.sxai-rm{color:var(--pencil)}
+.sxai-add{color:var(--ok)}
+.sxai-expl{font-size:13.5px;line-height:1.8;padding:6px 10px;margin:6px 0!important;background:var(--ok-soft);color:var(--ink);border-radius:2px}
+.sxai-warn{font-size:12.5px}
+.sxai input[type=text]{width:100%;max-width:60ch}
+.sxai .field.block{margin-top:8px;gap:4px}
+/* Pick mode: whole sentences are the targets. */
+.reader.sxai-picking .sent{cursor:pointer;border-radius:3px;transition:background-color .12s}
+.reader.sxai-picking .sent:focus-visible{background:color-mix(in srgb,var(--sx) 14%,transparent)}
+@media (hover:hover){.reader.sxai-picking .sent:hover{background:color-mix(in srgb,var(--sx) 14%,transparent)}}
+.reader.sxai-picking .w{cursor:pointer}
+.reader .sent.sxai-target{background:color-mix(in srgb,var(--sx) 10%,transparent);border-radius:3px;box-shadow:0 0 0 2px color-mix(in srgb,var(--sx) 10%,transparent)}
+/* マークの作り方 自動 / AI (app/sxsrc.js) */
+.sxsrcbar{margin-top:-2px;align-items:baseline}
+.sxsrc button small{font-size:11px;font-weight:400;color:var(--ink-2);margin-left:.35em}
+.sxsrc button:disabled{cursor:not-allowed;opacity:.5}
+.sxsrc button:disabled:hover{color:var(--ink-2)}
+.sxsrc-status{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;font-size:13px;flex:1 1 100%;min-width:0}
+@media (max-width:520px){.sxsrc button small{display:block;margin-left:0}}
+.sxsrc-status .hint{margin:0}
+.sxsrc-prog{color:var(--sx);font-weight:600}
+.sxsrc-prog::before{content:"";display:inline-block;width:.7em;height:.7em;margin-right:.4em;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-.05em;animation:sxsrc-spin 1s linear infinite}
+@media (prefers-reduced-motion:reduce){.sxsrc-prog::before{animation:none}}
+@keyframes sxsrc-spin{to{transform:rotate(360deg)}}
+.sxsrc-prog .hint{font-weight:400;margin-left:.3em}
+.sxsrc-msg{color:var(--ink)}
+.sxsrc-err{color:var(--pencil)}
+.sxkey-ai{color:var(--sx);font-weight:700}
+/* 区切りの作り方 自動 / AI (app/slsrc.js) */
+.slsrcbar{margin-top:-2px;align-items:baseline}
+.slsrc button small{font-size:11px;font-weight:400;color:var(--ink-2);margin-left:.35em}
+.slsrc button:disabled{cursor:not-allowed;opacity:.5}
+.slsrc button:disabled:hover{color:var(--ink-2)}
+@media (max-width:520px){.slsrc button small{display:block;margin-left:0}}
+.slpref-why{margin:4px 0 0}
