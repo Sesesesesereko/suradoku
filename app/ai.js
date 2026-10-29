@@ -31,7 +31,7 @@ function saveSettings() { try { localStorage.setItem(SKEY, JSON.stringify(settin
 // A pasted key may carry full-width letters (Japanese input) or invisible characters (zero-width
 // spaces, line breaks). Those make fetch() reject the header before anything is sent, so keep only
 // the characters a Google API key can contain.
-const cleanKey = (k) => String(k || '').normalize('NFKC').replace(/[^A-Za-z0-9_-]/g, '');
+const cleanKey = (k) => String(k || '').normalize('NFKC').replace(/[^\x21-\x7E]/g, '');
 function geminiKey() {
   try { const k = localStorage.getItem(KKEY); if (k) return cleanKey(k); } catch { /* blocked storage */ }
   return memKey;
@@ -106,11 +106,11 @@ export function providerErrorText(code) {
     blocked: BLOCKED,
     network: `Geminiに接続できませんでした。ネット接続を確かめてから押し直してください。Claudeアプリの中で開いている場合は、Safariで開くと通ることがあります${lastNetDetail ? `（詳細: ${lastNetDetail}）` : ''}`,
     no_key: 'Gemini を使うには「AIの設定」で APIキーを入れてください',
-    bad_key: 'Gemini の APIキーが正しくないか、使えないキーです。「AIの設定」でキーを確かめてください',
+    bad_key: `Gemini の APIキーが正しくないか、使えないキーです。「AIの設定」でキーを確かめてください${lastGoogleDetail ? `（Googleの返事: ${lastGoogleDetail}）` : ''}`,
     bad_model: 'Gemini のモデル名が見つかりません。「AIの設定」でモデルを確かめてください',
-    bad_request: 'Gemini がこの依頼を受け付けませんでした。「AIの設定」のモデルを確かめてください',
+    bad_request: `Gemini がこの依頼を受け付けませんでした。「AIの設定」のモデルを確かめてください${lastGoogleDetail ? `（Googleの返事: ${lastGoogleDetail}）` : ''}`,
     rate_limited: 'Gemini の利用が混み合っているか、利用上限に達しました。少し待ってから押し直してください',
-    upstream_error: 'Gemini でエラーが起きました。少し待ってから押し直してください',
+    upstream_error: `Gemini でエラーが起きました。少し待ってから押し直してください${lastGoogleDetail ? `（Googleの返事: ${lastGoogleDetail}）` : ''}`,
     refused: 'この部分は答えてもらえませんでした',
     invalid_json: 'AIの答えを読み取れませんでした。押し直してください',
   };
@@ -131,7 +131,8 @@ export function providerErrorText(code) {
 // ---- Gemini ----
 // Did the page's Content-Security-Policy block a request to Gemini? (The event is dispatched to the document.)
 let cspHits = 0;
-let lastNetDetail = '';   // the browser's own words for the last failed connection (shown with the message)
+let lastNetDetail = '';
+let lastGoogleDetail = '';   // Google's error status and message for the last refused request   // the browser's own words for the last failed connection (shown with the message)
 document.addEventListener('securitypolicyviolation', (e) => {
   if (String(e.blockedURI || '').includes('generativelanguage.googleapis.com')) cspHits++;
 });
@@ -219,6 +220,8 @@ async function geminiOnce(prompt, opts = {}) {
     if (!res.ok) {
       const status = String(data?.error?.status || ''), msg = String(data?.error?.message || '');
       const reasons = JSON.stringify(data?.error?.details || '');
+      const reason = (data?.error?.details || []).map(d => d?.reason).filter(Boolean)[0] || '';
+      lastGoogleDetail = `${res.status}${status ? ' ' + status : ''}${reason ? ' / ' + reason : ''}${msg ? ': ' + msg.replace(/AIza[0-9A-Za-z_-]+/g, '…').slice(0, 160) : ''}`;
       if (res.status === 429 || res.status === 503 || status === 'RESOURCE_EXHAUSTED' || status === 'UNAVAILABLE') throw err('rate_limited', { status: res.status });
       if (res.status === 401 || res.status === 403 || /API_KEY_INVALID|API key/i.test(reasons + msg)) throw err('bad_key', { status: res.status });
       if (res.status === 404) throw err('bad_model', { status: res.status });
@@ -253,7 +256,8 @@ function syncForm() {
   $('#aiModelOwnWrap').hidden = $('#aiModel').value !== 'own';
   $('#aiClearKey').disabled = !hasGeminiKey();
   $('#aiClearKey').hidden = $('#aiSave').hidden = p !== 'gemini' && !hasGeminiKey();
-  $('#aiKeyState').textContent = hasGeminiKey() ? '保存済みのキーがあります（入れ直すと置き換えます）。' : 'キーはまだ保存されていません。';
+  const k = geminiKey();
+  $('#aiKeyState').textContent = k ? `保存済みのキー: ${k.slice(0, 4)}…（${k.length}文字）。入れ直すと置き換えます。` : 'キーはまだ保存されていません。';
   $('#aiEnvNote').textContent = LINK
     ? 'いまは claude.ai 上（リンク版）で開いています。ここからは Gemini に接続できないことがあります（「接続テスト」で確かめられます）。Gemini は、このアプリを claude.ai 以外（フォルダ版・自分のサイトなど）で開いたときに使えます。'
     : 'Claude は claude.ai で開いたリンク版だけで使えます。ここでは Gemini を使ってください。';
